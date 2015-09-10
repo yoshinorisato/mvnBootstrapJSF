@@ -1,0 +1,142 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+    <f:view contentType="text/html">
+        <h:head>
+            <script type="text/javascript">
+
+                $(function() {
+                    var ws = new WebSocket('ws://localhost:8080/mvnBootstrapJSF/endpoint');
+
+                    ws.onmessage = function(e) {
+                        $('#message').text(e.data);
+                    };
+                });
+            </script>
+            
+            <!--日本語化-->
+            <h:outputScript name="js/calenderlocale.js" /> 
+            
+            <f:facet name="first">
+                <meta content='text/html; charset=UTF-8' http-equiv="Content-Type"/>
+                <title>PrimeFaces</title>
+            </f:facet>
+        </h:head>
+
+        <h:body>
+           <p:layout fullPage="true">
+
+
+                <p:layoutUnit position="south" header="本文" size="220" collapsible="true" resizable ="true">
+                    <h:form id="form-south">
+                    <p:layout  style="min-width:400px;min-height:200px;">
+                            <p:layoutUnit position="north"  resizable="true"  >                               
+                                送信先
+                            </p:layoutUnit>
+                            <p:layoutUnit position="west" resizable="true" size="100" minSize="40" maxSize="200">
+                                <h:outputText id="mailheader" value="#{calendarView.mbcls.subject}" escape="true"/>
+                            </p:layoutUnit>
+                            <p:layoutUnit position="center" resizable="true">
+                                       <h:outputText id="specifiedMsg" value="#{calendarView.mbcls.context}" escape="true"/>
+                            </p:layoutUnit>
+                        </p:layout>
+                    </h:form>
+
+                </p:layoutUnit>
+
+                <p:layoutUnit position="west" size="250" header="Left" collapsible="true" resizable="true" >
+                    <h:form id="form-west">   
+
+                        <p:calendar style="font-size:70.0%" value="#{calendarView.date1}"  locale="ja"
+                            navigator="true" showButtonPanel="true"
+                            mode="inline" pattern="yyyy/MM/dd" lang="ja" >
+                                                
+                            <p:ajax event="dateSelect" listener="#{calendarView.onDateSelect}" update=":form-center:eventsDT" />
+                        </p:calendar>
+
+
+                        <p:menu>
+                                <p:menuitem value="Demo" url="http://www.primefaces.org/showcase-labs/ui/home.jsf" />
+                                <p:menuitem value="Documentation" url="http://www.primefaces.org/documentation.html" />
+                                <p:menuitem value="Forum" url="http://forum.primefaces.org/" />
+                                <p:menuitem value="Themes" url="http://www.primefaces.org/themes.html" />
+
+
+                        </p:menu>
+                    
+                        <br/>
+
+                        <div id="message"></div>    
+                    </h:form>
+                </p:layoutUnit>
+
+                <p:layoutUnit position="center" resizable="true">
+                    <h:form id="form-center">   
+
+                        <p:dataTable id="eventsDT" style="width:1400px;" var="mlist" value="#{calendarView.mtablelist}" selectionMode="single" rowKey="#{mlist.idMail}"  resizableColumns="true">
+                           <!--<p:ajax event="rowUnselect" listener="#{dtSelectionView.onRowUnselect}" update=":form:msgs" />-->
+                        
+                            <p:ajax event="rowSelect" listener="#{calendarView.onRowSelect}" update=":form-south:mailheader :form-south:specifiedMsg" />
+                            <p:ajax event="rowUnselect" listener="#{calendarView.onRowUnselect}" update=":form-south:mailheader :form-south:specifiedMsg" />
+
+                     <f:facet name="header">
+                        </f:facet>                           
+                            <p:column headerText="ID" sortBy="#{mlist.idMail}" style="width:40px;" >
+                                <h:outputText value="#{mlist.idMail}" />                                
+                            </p:column>
+                            <p:column headerText="ステータス"  sortBy="#{mlist.aprvStatus1str}" style="width:80px;font-weight: bold;">
+                                <h:outputText value="#{mlist.aprvStatus1str}"  />
+                            </p:column>
+
+
+                            <p:column headerText="添付" sortBy="#{calendarView.isAttach(mlist.attachedFilePath)}" style="width:20px;">
+                                <h:outputText value="#{calendarView.isAttach(mlist.attachedFilePath)}" />
+                            </p:column>
+                            <p:column headerText="受付日時" style="width:100px;" sortBy="#{mlist.rcvDateTime}" >
+                                <h:outputText value="#{mlist.rcvDateTime}" >
+                                <f:convertDateTime pattern="dd日 HH:mm:ss" />
+                                </h:outputText>
+                                
+                            </p:column>
+                            <p:column headerText="送信日時"  style="width:100px;" sortBy="#{mlist.sentDateTime}">
+                                <h:outputText value="#{mlist.sentDateTime}" >
+                                <f:convertDateTime pattern="dd日 HH:mm:ss" />
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="送信先" sortBy="#{mlist.sentBy}">
+                                <h:outputText value="#{mlist.sentBy}" />
+                            </p:column>
+                            <p:column headerText="表題" style="width:500px;" sortBy="#{mlist.subject}">
+                                <h:outputText value="#{mlist.subject}"  />
+                            </p:column>
+                            <p:column headerText="作成確認日時"  sortBy="#{mlist.aprvDateTime1}">
+                                <h:outputText value="#{mlist.aprvDateTime1}" >
+                                <f:convertDateTime pattern="dd日 HH:mm:ss" />
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="作成確認者" sortBy="#{mlist.aprvdBy1}">
+                                <h:outputText value="#{mlist.aprvdBy1}" />
+                            </p:column>
+                            <p:column headerText="承認日時"  sortBy="#{mlist.aprvDateTime2}">
+                                <h:outputText value="#{mlist.aprvDateTime2}" >
+                                <f:convertDateTime pattern="dd日 HH:mm:ss" />
+                                </h:outputText>
+
+                            </p:column>
+                            <p:column headerText="承認者" sortBy="#{mlist.aprvdBy2}" >
+                                <h:outputText value="#{mlist.aprvdBy2}" />
+                            </p:column>
+                        </p:dataTable>
+                    </h:form>
+                </p:layoutUnit>
+
+            </p:layout>
+        </h:body>
+
+    </f:view>
+</html>
+
