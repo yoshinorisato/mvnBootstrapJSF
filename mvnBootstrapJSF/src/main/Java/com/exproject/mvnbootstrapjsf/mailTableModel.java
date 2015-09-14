@@ -40,6 +40,7 @@ public class mailTableModel {
             }
                     
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            
            
             //DBアクセスクラスを作成
             DBaccess DBclass = new DBaccess();
@@ -53,13 +54,11 @@ public class mailTableModel {
                 //stmt1.close();
 
                 // データの取得
-                
                 String sql2 = "select "
                         + "idMail,"
                         + "RcvDateTime,"
                         + "OperatorID,"
                         + "AprvStatus1,"
-                        + "AprvDateTime1,"
                         + "AprvdBy1,"
                         + "AprvDateTime1,"
                         + "AprvStatus2,"
