@@ -18,19 +18,17 @@ public class schedulePop implements Runnable {
     public void run() {
         System.out.print("Task" + number + " Start");
         System.out.println("(" + (System.currentTimeMillis() - start) + ")");
-        
-//メール取得オブジェクト
-        getPop obj = new getPop();
-        
+       
         try {
+            //メール取得オブジェクト
+            getPop obj = new getPop();
             try {
                 //POP処理
                 obj.process();
             } catch (IOException ex) {
                 Logger.getLogger(schedulePop.class.getName()).log(Level.SEVERE, null, ex);
             }
-            
-            
+  
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();

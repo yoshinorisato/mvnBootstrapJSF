@@ -13,7 +13,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import javax.mail.Address;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.Authenticator;
@@ -45,7 +48,7 @@ public class getPop {
     }
 
     //POP3でメールを取得する
-    public void process() throws IOException {
+    public void process() throws IOException, SQLException {
         final Properties props = new Properties();
 
         // 基本情報。ここでは gmailへの接続例を示します。
@@ -113,46 +116,38 @@ public class getPop {
                 try {
                     //メールファイルクラス
                     mailfileclass fileclass = new mailfileclass();
+                    
                     DBaccess DBObj = new DBaccess();
                     
                     Connection conn = DBObj.getMyConnection();
                     
                     final Message messages[] = folder.getMessages();
 
+                    //取得したメール件数分ループを行う
                     for (int index = 0; index < messages.length; index++) {
                         
                         final Message message = messages[index];
-                        
 
+                        //メールDBにデータをInsertする
+                        insertMailtable mailtable = new insertMailtable();
+                        
                         // このAPI利用範囲であれば TOPコマンド止まりで、RETRコマンドは送出されない。
-                        System.out.println("Subject: " + message.getSubject());
                         System.out.println("  Date: "
                                 + message.getSentDate().toString());
+                        
+                        //表題の取得
+                        mailtable.setSubject(message.getSubject());
 
+                        //送信元アドレスを設定                        
                         // TODO 0番目の配列アクセスをおこなっている点に注意。
                         final InternetAddress addrFrom = (InternetAddress) message.getFrom()[0];
-                        System.out.println("  From: " + addrFrom.getAddress());
-                        // MimeUtility.decodeText(addrFrom.getPersonal())
-
-                        // To: を表示。
-                        final Address[] addrsTo = message.getRecipients(RecipientType.TO);
-                        for (int loop = 0; loop < addrsTo.length; loop++) {
-                            final InternetAddress addrTo = (InternetAddress) addrsTo[loop];
-                            System.out.println("  To: " + addrTo.getAddress());
-                        }
-
-                        // Cc:
-                        final Address[] addrsCc = message.getRecipients(RecipientType.CC);
-                        if(addrsCc != null ){
-                            for (int loop = 0; loop < addrsCc.length; loop++) {
-                                final InternetAddress addrCc = (InternetAddress) addrsCc[loop];
-                                System.out.println("  Cc: " + addrCc.getAddress());
-                            }
-                        }
+                        mailtable.setOperatorID(addrFrom.getAddress());
                         
                         try {
                             final Object objContent = message.getContent();
                             
+                            
+                            //添付ファイルが存在したとき
                             if (objContent instanceof Multipart) {
                                 final Multipart multiPart = (Multipart) objContent;
                                 for (int indexPart = 0; indexPart < multiPart.getCount(); indexPart++) {
@@ -160,9 +155,13 @@ public class getPop {
                                     final String disposition = part.getDisposition();
                                     if (Part.ATTACHMENT.equals(disposition)
                                             || Part.INLINE.equals(disposition)) {
+                                        
+                                        //添付ファイル名を登録
                                         System.out.println("添付ファイル: ファイル名["
                                                 + MimeUtility.decodeText(part
                                                         .getFileName()) + "]");
+                                        mailtable.setAttachedFilePath(MimeUtility.decodeText(part
+                                                        .getFileName()));
                                         // 本当はここでストリーム読み込み処理を行う。
                                         // part.getInputStream();
                                     } else {
@@ -177,14 +176,12 @@ public class getPop {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                       
-                        //String name = "C:\\\\tmp\\test.txt";
-                        //File file = new File(name);
-                        //OutputStream os = new FileOutputStream(file);
-                        // メールの保存
-                        //message.writeTo(os);
+                        //メールテーブルに登録
+                        mailtable.insert(conn);
                         
+                        //メール本文をストリームより取得
                         InputStream is =message.getInputStream();
+
                         //ファイルを設定する
                         fileclass.setFile(is);
 

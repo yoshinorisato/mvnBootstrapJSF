@@ -31,29 +31,28 @@ public class mailfileclass {
     @Setter
     private InputStream file; 
     
+    //コンストラクタ
+    public void mailfileclass(){
+        
+    }
+            
     public void insert( Connection con )
-    {
-        
-        
+    {        
         try {
-
-            // ファイルサイズの取得
-             PreparedStatement stmt;
+             
+            PreparedStatement stmt;
             
             // ファイル内容の取得
-             InputStream fin = this.getFile();
+            InputStream fin = this.getFile();
 
-             stmt = con.prepareStatement("INSERT INTO maildb.mailfile(idMail,file) VALUES(?,?)");
+            stmt = con.prepareStatement("INSERT INTO (idMail,file) VALUES(?,?)");
 
-             stmt.setInt(1, this.getIdMail());
-             stmt.setBinaryStream(2,fin);
+            stmt.setInt(1, this.getIdMail());
+            stmt.setBinaryStream(2,fin);
 
-             int num = stmt.executeUpdate();
-
-             System.out.println("登録件数 : " + num);
-
-             stmt.close();
-
+            int num = stmt.executeUpdate();
+            System.out.println("登録件数 : " + num);
+            stmt.close();
          }
 
          catch(Exception e) {
