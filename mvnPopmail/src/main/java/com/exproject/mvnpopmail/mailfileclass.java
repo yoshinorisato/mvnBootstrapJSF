@@ -35,7 +35,8 @@ public class mailfileclass {
     public void mailfileclass(){
         
     }
-            
+    
+    //メールファイルをメールファイルテーブルに登録する
     public void insert( Connection con )
     {        
         try {
@@ -45,13 +46,12 @@ public class mailfileclass {
             // ファイル内容の取得
             InputStream fin = this.getFile();
 
-            stmt = con.prepareStatement("INSERT INTO (idMail,file) VALUES(?,?)");
+            stmt = con.prepareStatement("INSERT INTO mailfile (idMail,file) VALUES(?,?)");
 
             stmt.setInt(1, this.getIdMail());
             stmt.setBinaryStream(2,fin);
 
             int num = stmt.executeUpdate();
-            System.out.println("登録件数 : " + num);
             stmt.close();
          }
 

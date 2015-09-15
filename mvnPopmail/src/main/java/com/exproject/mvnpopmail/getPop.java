@@ -6,18 +6,14 @@
 package com.exproject.mvnpopmail;
 
 import com.exproject.util.DBaccess;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
-import javax.mail.Address;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.Authenticator;
 import javax.mail.Flags;
@@ -28,19 +24,17 @@ import javax.mail.NoSuchProviderException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Store;
-import javax.mail.Message.RecipientType;
 import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeUtility;
-import javax.mail.internet.MimeMessage;
         
 /**
  * シンプルなメール受信サンプル。
  */
 public class getPop {
 
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) throws IOException, SQLException {
 
         System.out.println("メール受信: 開始");
         new getPop().process();
@@ -131,9 +125,12 @@ public class getPop {
                         //メールDBにデータをInsertする
                         insertMailtable mailtable = new insertMailtable();
                         
+                        //メッセージID
+                        String[] msgIds = message.getHeader("Message-ID");
+                        if (msgIds != null) 
+                            mailtable.setRcvUID(msgIds[0]);
+                   
                         // このAPI利用範囲であれば TOPコマンド止まりで、RETRコマンドは送出されない。
-                        System.out.println("  Date: "
-                                + message.getSentDate().toString());
                         
                         //表題の取得
                         mailtable.setSubject(message.getSubject());
@@ -157,30 +154,42 @@ public class getPop {
                                             || Part.INLINE.equals(disposition)) {
                                         
                                         //添付ファイル名を登録
-                                        System.out.println("添付ファイル: ファイル名["
-                                                + MimeUtility.decodeText(part
-                                                        .getFileName()) + "]");
+                                        //System.out.println("添付ファイル: ファイル名["
+                                          //      + MimeUtility.decodeText(part
+                                            //            .getFileName()) + "]");
                                         mailtable.setAttachedFilePath(MimeUtility.decodeText(part
                                                         .getFileName()));
                                         // 本当はここでストリーム読み込み処理を行う。
                                         // part.getInputStream();
                                     } else {
-                                        System.out.println("メール本文(添付ファイル付) ["
-                                                + part.getContent().toString()
-                                                + "]");
+                                        //System.out.println("メール本文(添付ファイル付) ["
+                                          //      + part.getContent().toString()
+                                            //    + "]");
                                     }
                                 }
                             } else {
-                                System.out.println("メール本文[" + objContent.toString() + "]");
+                                //System.out.println("メール本文[" + objContent.toString() + "]");
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        //メールテーブルに登録
-                        mailtable.insert(conn);
                         
+                        
+                        //メールテーブルに登録
+                        try{
+                         
+                            mailtable.insert(conn);
+                        }
+                        
+                        catch(Exception ex) {
+                             //メールテーブル登録エラーの時
+                             Logger.getLogger(insertMailtable.class.getName()).log(Level.WARNING, null, ex);
+                        }
                         //メール本文をストリームより取得
                         InputStream is =message.getInputStream();
+
+                        //idMailを設定する
+                        fileclass.setIdMail(mailtable.getIdMail());
 
                         //ファイルを設定する
                         fileclass.setFile(is);

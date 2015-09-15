@@ -28,7 +28,7 @@ public class DBaccess {
         
         Class.forName("com.mysql.jdbc.Driver");
         myConnection=DriverManager.getConnection(
-                "jdbc:mysql://192.168.12.171/maildb","root", "actwatch"
+                "jdbc:mysql://192.168.12.176/maildb","root", "actwatch"
                 );
         }
         catch(Exception e){

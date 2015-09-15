@@ -9,8 +9,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.Temporal;
@@ -33,6 +37,12 @@ public class insertMailtable {
     @Getter
     @Setter
     private Integer idMail;     
+
+    //メールID
+    @Column(name = "RcvUID")
+    @Getter
+    @Setter
+    private String RcvUID;
     
     @Column(name = "RcvDateTime")
     @Temporal(TemporalType.TIMESTAMP)
@@ -74,54 +84,70 @@ public class insertMailtable {
     public void setSerialID(Long serialID) {
         this.serialID = serialID;
     }
+
+
     
     //メールデータを登録する
-    public Integer insert(Connection conn) throws SQLException{
+    public Integer insert(Connection conn) throws SQLException {
+        PreparedStatement stmt ;        
+        int num = 0;
+        ResultSet idkeys = null;
         
-        PreparedStatement stmt;
-        
+        stmt = conn.prepareStatement("INSERT INTO mailtable ("
+                + "RcvUID,"
+                + "RcvDateTime,"
+                + "OperatorID,"
+                + "AprvStatus1,"
+                + "Subject,"
+                + "AttachedFilePath "
+                + ") VALUES(?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
+        try {            
+            //RCVUID
+            stmt.setString(1, this.getRcvUID());
+
+            //受信日時
+            stmt.setTimestamp(2,new Timestamp(System.currentTimeMillis()));
             
-        stmt = conn.prepareStatement("INSERT INTO ("
-            + "RcvDateTime,"
-            + "OperatorID,"
-            + "AprvStatus1,"
-            + "Subject,"
-            + "AttachedFilePath "
-        + ") VALUES(?,?,?,?,?)");
-        
-        //受信日時
-
-        stmt.setDate(1, new java.sql.Date(System.currentTimeMillis()));
-        
-        //送信元アドレス
-        stmt.setString(2, this.getOperatorID());
-        //未承認のため固定
-        stmt.setInt(3, 1);
-        //表題
-        stmt.setString(4, this.getSubject());
-        
-        //添付ファイル名
-        if(this.getAttachedFilePath() != null)
-            stmt.setString(5, this.getAttachedFilePath());
-        else
-            stmt.setString(5, "");
-
-        //SQLを実行
-        int num = stmt.executeUpdate();
-
-        // インデックス指定でアクセスする必要がある。
-        try ( 
-
-                ResultSet keys = stmt.getGeneratedKeys() ) {
+            //送信元アドレス
+            stmt.setString(3, this.getOperatorID());
+            
+            //未承認のため固定
+            stmt.setInt(4, 1);
+            
+            //表題
+            stmt.setString(5, this.getSubject());
+            
+            //添付ファイル名
+            if(this.getAttachedFilePath() != null)
+                stmt.setString(6, this.getAttachedFilePath());
+            else
+                stmt.setString(6, "");
+            
+            //SQLを実行
+            stmt.execute();
+                
+            idkeys = stmt.getGeneratedKeys();
+            
 
             // ResultSetと同じ感じに値を取得する。
-            keys.next();
-            Integer id = keys.getInt(1);
-            System.out.println("idMail = " + id);  
-            this.setIdMail(id);
-            stmt.close();  
-            keys.close();        
+            while(idkeys.next()){
+                
+                //idMailを取得する
+                Integer id = idkeys.getInt(1);
+                System.out.println("idMail = " + id + "メールを登録しました");
+                this.setIdMail(id);
+            }
 
+        }   catch (SQLException ex) {
+            Logger.getLogger(insertMailtable.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        finally{
+            
+            if(idkeys != null) idkeys.close();
+            if(stmt != null) stmt.close();
+            
+
+                
         }
         return num;
     }
