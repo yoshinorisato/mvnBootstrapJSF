@@ -1,49 +1,49 @@
 package com.exproject.mvnpopmail;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
  
-public class schedulePop implements Runnable {
-    int number;
-    long start;
-    public schedulePop(int number, long start){
-        this.number = number;
-        this.start = start;
-    }
-    //スレッドの実行
-    public void run() {
-        System.out.print("Task" + number + " Start");
-        System.out.println("(" + (System.currentTimeMillis() - start) + ")");
-       
-        try {
-            //メール取得オブジェクト
-            getPop obj = new getPop();
-            try {
-                //POP処理
-                obj.process();
-            } catch (IOException ex) {
-                Logger.getLogger(schedulePop.class.getName()).log(Level.SEVERE, null, ex);
+public class schedulePop  {
+    //スレッドを開始する
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+ 
+ 
+        final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+        ses.scheduleWithFixedDelay(new Runnable() {
+            
+            @Override
+            public void run() {
+                // ここに繰り返し処理を書く
+                System.out.println("開始");
+                getPop obj = new getPop();
+                try {
+                    obj.process();
+                } catch (IOException ex) {
+                    Logger.getLogger(schedulePop.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (SQLException ex) {
+                    Logger.getLogger(schedulePop.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+                System.out.println(new Date());
             }
+        }, 0, 2, TimeUnit.SECONDS);
   
-            Thread.sleep(1000);
+        // 10秒待つ
+        try {
+            Thread.sleep(10);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.print("Task" + number + " End  ");
-        System.out.println("(" + (System.currentTimeMillis() - start) + ")");
-    }
-     
-    public static void main(String[] args){
-        ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
-        long start = System.currentTimeMillis();
-        for(int i=0; i<3; i++){
-            System.out.print("Task"+i+" Send ");
-            System.out.println("(" + (System.currentTimeMillis() - start) + ")");
-            ex.schedule(new schedulePop(i,start),1000,TimeUnit.MILLISECONDS);
-        }
+ 
+        ses.shutdown();
     }
 }
